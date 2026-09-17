@@ -39,9 +39,9 @@
     "step": {
       "init": {
         "title": "Update interval",
-        "description": "How often the pickup days are fetched from the portal. Pickup days change rarely, so a long interval is fine and gentle on the portal.",
+        "description": "How often, in days, the schedule is fetched from the portal. The municipality publishes the whole season at once, so a long interval is fine - and gentle on their service.",
         "data": {
-          "scan_interval_minutes": "Fetch new times every"
+          "scan_interval_days": "Fetch new times every"
         }
       }
     }

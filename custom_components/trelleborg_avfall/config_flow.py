@@ -29,12 +29,12 @@ from .const import (
     CONF_BUILDING_LABEL,
     CONF_CUSTOMER_ID,
     CONF_IDENTIFICATION_NUMBER,
-    CONF_SCAN_INTERVAL_MINUTES,
+    CONF_SCAN_INTERVAL_DAYS,
     CONF_STREET_ADDRESS,
-    DEFAULT_SCAN_INTERVAL_MINUTES,
+    DEFAULT_SCAN_INTERVAL_DAYS,
     DOMAIN,
-    MAX_SCAN_INTERVAL_MINUTES,
-    MIN_SCAN_INTERVAL_MINUTES,
+    MAX_SCAN_INTERVAL_DAYS,
+    MIN_SCAN_INTERVAL_DAYS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -186,7 +186,7 @@ class TrelleborgOptionsFlow(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=user_input)
 
         current = self.config_entry.options.get(
-            CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES
+            CONF_SCAN_INTERVAL_DAYS, DEFAULT_SCAN_INTERVAL_DAYS
         )
 
         return self.async_show_form(
@@ -194,14 +194,14 @@ class TrelleborgOptionsFlow(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_SCAN_INTERVAL_MINUTES, default=current
+                        CONF_SCAN_INTERVAL_DAYS, default=current
                     ): NumberSelector(
                         NumberSelectorConfig(
-                            min=MIN_SCAN_INTERVAL_MINUTES,
-                            max=MAX_SCAN_INTERVAL_MINUTES,
-                            step=5,
+                            min=MIN_SCAN_INTERVAL_DAYS,
+                            max=MAX_SCAN_INTERVAL_DAYS,
+                            step=1,
                             mode=NumberSelectorMode.BOX,
-                            unit_of_measurement="min",
+                            unit_of_measurement="d",
                         )
                     )
                 }

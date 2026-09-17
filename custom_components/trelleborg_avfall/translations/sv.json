@@ -39,9 +39,9 @@
     "step": {
       "init": {
         "title": "Uppdateringsintervall",
-        "description": "Hur ofta hämtningsdagarna hämtas från portalen. De ändras sällan, så ett långt intervall räcker och belastar portalen mindre.",
+        "description": "Hur ofta, i dagar, schemat hämtas från portalen. Kommunen publicerar hela säsongen på en gång, så ett långt intervall går bra – och belastar deras tjänst mindre.",
         "data": {
-          "scan_interval_minutes": "Hämta nya tider var"
+          "scan_interval_days": "Hämta nya tider var"
         }
       }
     }

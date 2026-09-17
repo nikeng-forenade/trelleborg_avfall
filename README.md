@@ -117,9 +117,16 @@ Starta om Home Assistant.
 
 ### Uppdateringsintervall
 
-**Integrationskortet → Konfigurera** låter dig ställa hur ofta nya tider hämtas
-(15 minuter till 7 dagar, standard 12 timmar). Tömningsdagarna ändras sällan, så
-ett långt intervall räcker och belastar portalen mindre.
+**Integrationskortet → Konfigurera** låter dig ställa hur ofta nya tider hämtas –
+i **dagar** (1–30, standard 1).
+
+Kommunen publicerar hela säsongen på en gång (hämtschemat är en PDF med alla
+datum), så det finns ingen anledning att fråga portalen ofta. Ett längre intervall
+belastar deras tjänst mindre, och eftersom fastighets-ID:t sparas kräver varje
+hämtning ingen inloggning – bara två anrop.
+
+När det kända schemat börjar ta slut (21 dagar kvar) hämtas det automatiskt en
+gång om dagen igen, så nästa säsong inte missas.
 
 ## Automationer
 

@@ -26,13 +26,32 @@ from .api import (
 from .const import (
     CONF_BUILDING_ID,
     CONF_BUILDING_LABEL,
+    CONF_SCAN_INTERVAL_DAYS,
     CONF_SCAN_INTERVAL_MINUTES,
     CONF_STREET_ADDRESS,
-    DEFAULT_SCAN_INTERVAL_MINUTES,
+    DEFAULT_SCAN_INTERVAL_DAYS,
     DOMAIN,
+    HORIZON_REFRESH_DAYS,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def scan_interval(entry: ConfigEntry) -> timedelta:
+    """Uppdateringsintervallet, i dagar.
+
+    Schemat publiceras en säsong i taget, så dagar är rätt enhet. Äldre
+    versioner sparade intervallet i minuter och läses fortfarande in.
+    """
+    days = entry.options.get(CONF_SCAN_INTERVAL_DAYS)
+    if days is not None:
+        return timedelta(days=days)
+
+    minutes = entry.options.get(CONF_SCAN_INTERVAL_MINUTES)
+    if minutes is not None:
+        return timedelta(minutes=minutes)
+
+    return timedelta(days=DEFAULT_SCAN_INTERVAL_DAYS)
 
 
 @dataclass(frozen=True)
@@ -85,15 +104,13 @@ class TrelleborgCoordinator(DataUpdateCoordinator[ScheduleData]):
         # Fastighets-ID:t cachas i minnet. Config entry-data rörs inte här, för
         # en sådan ändring skulle kunna trigga en omladdning av posten.
         self._building: Building | None = None
+        self._base_interval = scan_interval(entry)
 
-        minutes = entry.options.get(
-            CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES
-        )
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(minutes=minutes),
+            update_interval=self._base_interval,
         )
 
     async def _async_update_data(self) -> ScheduleData:
@@ -105,9 +122,29 @@ class TrelleborgCoordinator(DataUpdateCoordinator[ScheduleData]):
             pickups = await self._async_fetch_public(building.id)
             if pickups:
                 self._building = building
-                return ScheduleData(building.id, building.label, pickups)
+                return self._apply_interval(
+                    ScheduleData(building.id, building.label, pickups)
+                )
 
-        return await self._async_update_via_login()
+        return self._apply_interval(await self._async_update_via_login())
+
+    def _apply_interval(self, data: ScheduleData) -> ScheduleData:
+        """Hämta oftare igen när det kända schemat börjar ta slut.
+
+        Portalen publicerar en säsong i taget. Utan det här skulle ett långt
+        intervall kunna göra att nästa säsongs datum missas.
+        """
+        interval = self._base_interval
+        if data.pickups:
+            horizon = (data.pickups[-1].date - dt_util.now().date()).days
+            if horizon <= HORIZON_REFRESH_DAYS:
+                interval = min(interval, timedelta(days=1))
+
+        if interval != self.update_interval:
+            _LOGGER.debug("Justerar uppdateringsintervallet till %s", interval)
+            self.update_interval = interval
+
+        return data
 
     def _building_from_entry(self) -> Building | None:
         building_id = self._entry.data.get(CONF_BUILDING_ID)
