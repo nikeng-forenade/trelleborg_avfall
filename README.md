@@ -39,6 +39,37 @@ De två binära sensorerna slår om strax efter midnatt, så automationer med
 | `days_until` | `12` |
 | `upcoming` | lista med `date`, `waste_type`, `bin`, `bin_description`, `days_until` |
 
+### Var ser jag allt?
+
+Enhetskortet visar bara entiteternas huvudstatus. Detaljerna ligger i attributen.
+
+**Alla attribut:** *Utvecklarverktyg → Tillstånd* (Developer Tools → States), sök på
+`trelleborg_avfall` och klicka på entiteten. Där finns `upcoming` med hela schemat.
+Samma lista visas om du klickar på entiteten i gränssnittet – attributen ligger
+längst ned i panelen.
+
+**Alla datum i kalenderform:** lägg till ett *Kalenderkort* på en dashboard och välj
+**Trelleborg Avfall**. Kalenderns status (*Off*) betyder bara att ingen tömning
+pågår just nu – händelserna ligger kvar.
+
+**Egen lista på dashboarden** (Markdown-kort):
+
+```yaml
+type: markdown
+title: Kommande tömningar
+content: >
+  {% set u = state_attr('sensor.trelleborg_avfall_next_pickup', 'upcoming') or [] %}
+  {% for p in u[:6] %}
+  **{{ p.date }}** – {{ p.waste_type }}, {{ p.bin }} (om {{ p.days_until }} dagar)
+  {% endfor %}
+```
+
+**Portalens egen beskrivning av tunnan:** sensorns attribut `bin_description`, till
+exempel `Kärl, 370 L fyrfack. Kärl 1. Var 14:e dag`.
+
+> Entitets-ID:na beror på vad enheten heter i din installation. Kontrollera dem under
+> *Utvecklarverktyg → Tillstånd* och byt ut vid behov.
+
 ## Installation
 
 ### Via HACS
