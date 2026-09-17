@@ -20,6 +20,14 @@ De två binära sensorerna slår om strax efter midnatt, så automationer med
 
 ## Installation
 
+### Via HACS
+
+1. HACS → tre prickar uppe till höger → **Anpassade repositories**
+2. Klistra in `https://github.com/nikeng-forenade/trelleborg_avfall`
+   och välj kategori **Integration**
+3. Sök upp **Trelleborg Avfall** i HACS och klicka **Ladda ned**
+4. Starta om Home Assistant
+
 ### Manuellt
 
 Kopiera mappen `custom_components/trelleborg_avfall` till din HA-konfiguration:
@@ -29,13 +37,6 @@ Kopiera mappen `custom_components/trelleborg_avfall` till din HA-konfiguration:
 ```
 
 Starta om Home Assistant.
-
-### Via HACS (eget repository)
-
-1. Lägg upp det här repot på GitHub.
-2. HACS → tre prickar uppe till höger → **Anpassade repositories**.
-3. Klistra in repots URL och välj kategori **Integration**.
-4. Sök upp *Trelleborg Avfall* i HACS och installera, starta sedan om HA.
 
 ## Konfiguration
 
