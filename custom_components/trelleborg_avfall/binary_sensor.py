@@ -14,7 +14,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
+from .api import Pickup
 from .const import DOMAIN
 from .coordinator import TrelleborgCoordinator
 
@@ -67,13 +69,11 @@ class TrelleborgPickupBinarySensor(
 
     @property
     def _day(self) -> dt.date:
-        return dt.date.today() + dt.timedelta(days=self._offset)
+        return dt_util.now().date() + dt.timedelta(days=self._offset)
 
     @property
-    def _pickups(self) -> list[str]:
-        return [
-            pickup.waste_type for pickup in self.coordinator.data.pickups_on(self._day)
-        ]
+    def _pickups(self) -> list[Pickup]:
+        return self.coordinator.data.pickups_on(self._day)
 
     @property
     def is_on(self) -> bool:
@@ -81,7 +81,10 @@ class TrelleborgPickupBinarySensor(
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
+        pickups = self._pickups
         return {
             "date": self._day.isoformat(),
-            "waste_types": self._pickups,
+            "waste_types": [pickup.waste_type for pickup in pickups],
+            "bins": [pickup.bin_label for pickup in pickups],
+            "bin_descriptions": [pickup.bin_description for pickup in pickups],
         }

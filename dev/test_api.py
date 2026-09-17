@@ -20,6 +20,7 @@ API_PATH = (
     / "api.py"
 )
 
+
 # Modulen laddas via filsökväg med ett eget namn. Att lägga integrationsmappen i
 # sys.path skulle göra att integrationens calendar.py skuggar standardbibliotekets
 # calendar-modul, vilket får requests att krascha.
@@ -70,19 +71,28 @@ def main() -> int:
     building = client.login_and_select_building()
     print(f"   vald fastighet: id={building.id} label={building.label!r}")
 
-    print("\n2. Hämtar schema UTAN session (publik endpoint) ...")
+    print("\n2. Nästa tömning per kärl (JSON) ...")
     for pickup in client.get_pickups(building.id):
-        size = f" [{pickup.bin_size}]" if pickup.bin_size else ""
         print(
-            f"   {pickup.date}  {pickup.waste_type}{size}  ({pickup.frequency})"
+            f"   {pickup.date}  {pickup.waste_type:11} "
+            f"{pickup.bin_label:24} {pickup.bin_description}"
         )
 
-    print("\n3. Hämtar schema MED session ...")
+    print("\n3. Hela schemat (JSON + PDF) ...")
+    schedule = client.fetch_schedule(building.id)
+    print(f"   {len(schedule)} tömningar totalt")
+    for pickup in schedule:
+        print(
+            f"   {pickup.date}  {pickup.waste_type:11} "
+            f"{pickup.bin_label:24} {pickup.bin_description}"
+        )
+
+    print("\n4. Kontroll: fungerar det utan session? ...")
     session = client.login()
-    anonymous = len(client.get_pickups(building.id))
-    with_session = len(client.get_pickups(building.id, session=session))
-    print(f"   utan session: {anonymous} poster")
-    print(f"   med session : {with_session} poster")
+    json_only = len(client.get_pickups(building.id, session=session))
+    full = len(client.fetch_schedule(building.id))
+    print(f"   nästa per kärl : {json_only}")
+    print(f"   hela schemat   : {full}")
 
     # OBS: inget test av felaktiga inloggningsuppgifter här.
     # Portalen låser inloggningen efter tre felaktiga försök.

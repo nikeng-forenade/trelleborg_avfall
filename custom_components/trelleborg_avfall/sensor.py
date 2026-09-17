@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
 from .api import Pickup
 from .const import DOMAIN
@@ -53,9 +54,7 @@ class TrelleborgNextPickupSensor(
     _attr_device_class = SensorDeviceClass.DATE
     _attr_icon = "mdi:calendar-clock"
 
-    def __init__(
-        self, coordinator: TrelleborgCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_next_pickup"
         self._attr_device_info = DeviceInfo(
@@ -89,10 +88,14 @@ class TrelleborgNextPickupSensor(
         if pickup is None:
             return {"upcoming": []}
 
-        today = dt.date.today()
+        today = dt_util.now().date()
         return {
             "waste_type": pickup.waste_type,
+            "bin": pickup.bin_label,
             "bin_size": pickup.bin_size,
+            "container_type": pickup.container_type,
+            "bin_code": pickup.bin_code,
+            "bin_description": pickup.bin_description,
             "frequency": pickup.frequency,
             "weekday": WEEKDAYS[pickup.date.weekday()],
             "days_until": (pickup.date - today).days,
@@ -100,7 +103,8 @@ class TrelleborgNextPickupSensor(
                 {
                     "date": item.date.isoformat(),
                     "waste_type": item.waste_type,
-                    "bin_size": item.bin_size,
+                    "bin": item.bin_label,
+                    "bin_description": item.bin_description,
                     "days_until": (item.date - today).days,
                 }
                 for item in upcoming

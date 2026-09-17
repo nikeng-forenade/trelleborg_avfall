@@ -28,16 +28,18 @@ async def async_setup_entry(
 
 def _to_event(pickup: Pickup) -> CalendarEvent:
     start = dt_util.start_of_local_day(pickup.date)
-    details = [pickup.waste_type]
-    if pickup.bin_size:
-        details.append(pickup.bin_size)
-    if pickup.frequency:
-        details.append(pickup.frequency)
+    summary = pickup.waste_type
+    if pickup.bin_label:
+        summary = f"{summary} · {pickup.bin_label}"
+
+    details = [
+        detail for detail in (pickup.bin_description, pickup.frequency) if detail
+    ]
 
     return CalendarEvent(
         start=start,
         end=start + dt.timedelta(days=1),
-        summary=pickup.waste_type,
+        summary=summary,
         description=" · ".join(details),
     )
 
@@ -49,9 +51,7 @@ class TrelleborgCalendar(CoordinatorEntity[TrelleborgCoordinator], CalendarEntit
     _attr_translation_key = "pickups"
     _attr_icon = "mdi:calendar"
 
-    def __init__(
-        self, coordinator: TrelleborgCoordinator, entry: ConfigEntry
-    ) -> None:
+    def __init__(self, coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_calendar"
         self._attr_device_info = DeviceInfo(

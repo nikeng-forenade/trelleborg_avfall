@@ -12,6 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .api import (
     Building,
@@ -46,7 +47,7 @@ class ScheduleData:
         return [pickup for pickup in self.pickups if pickup.date == day]
 
     def upcoming(self, from_day: dt.date | None = None) -> list[Pickup]:
-        start = from_day or dt.date.today()
+        start = from_day or dt_util.now().date()
         return [pickup for pickup in self.pickups if pickup.date >= start]
 
 
@@ -96,9 +97,9 @@ class TrelleborgCoordinator(DataUpdateCoordinator[ScheduleData]):
     async def _async_fetch_public(self, building_id: str) -> list[Pickup]:
         try:
             return await self.hass.async_add_executor_job(
-                self._client.get_pickups, building_id
+                self._client.fetch_schedule, building_id
             )
-        except (requests.RequestException, ValueError) as err:
+        except (requests.RequestException, ValueError, TrelleborgError) as err:
             _LOGGER.debug(
                 "Kunde inte läsa schemat utan inloggning (%s), loggar in", err
             )

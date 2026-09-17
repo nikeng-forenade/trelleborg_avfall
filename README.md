@@ -10,13 +10,34 @@ köras samtidigt som, eller i stället för, den.
 
 | Entitet | Vad den gör |
 |---|---|
-| `sensor.*_nasta_tomning` | Datum för nästa tömning (attribut: typ, kärl, frekvens, dagar kvar och listan `upcoming`) |
+| `sensor.*_nasta_tomning` | Datum för nästa tömning, med tunnan och hela den kommande listan som attribut |
 | `binary_sensor.*_tomning_idag` | På hela tömningsdagen |
 | `binary_sensor.*_tomning_imorgon` | På hela dagen innan |
 | `calendar.*_tomningar` | Alla tömningar som heldagshändelser |
 
 De två binära sensorerna slår om strax efter midnatt, så automationer med
 `to: "on"` körs rätt dag.
+
+### Attribut att bygga automationer på
+
+**`binary_sensor.*_tomning_idag` / `*_tomning_imorgon`**
+
+| Attribut | Exempel |
+|---|---|
+| `date` | `2026-09-29` |
+| `waste_types` | `["Fyrfack 1", "Restavfall"]` |
+| `bins` | `["370 l Fyrfackskärl", "190 l Kärl"]` |
+| `bin_descriptions` | `["Kärl, 370 L fyrfack. Kärl 1. Var 14:e dag", ...]` |
+
+**`sensor.*_nasta_tomning`**
+
+| Attribut | Exempel |
+|---|---|
+| `waste_type` | `Fyrfack 1` |
+| `bin` | `370 l Fyrfackskärl` |
+| `bin_description` | `Kärl, 370 L fyrfack. Kärl 1. Var 14:e dag` |
+| `days_until` | `12` |
+| `upcoming` | lista med `date`, `waste_type`, `bin`, `bin_description`, `days_until` |
 
 ## Installation
 
@@ -59,6 +80,9 @@ Starta om Home Assistant.
 ett långt intervall räcker och belastar portalen mindre.
 
 ## Automationer
+
+Vill du ha med **vilken tunna** det gäller i meddelandet använder du `bins` i
+stället för `waste_types` – samma uppbyggnad, se attributtabellen ovan.
 
 ### Påminnelse dagen innan
 
@@ -111,21 +135,30 @@ automation:
 
 ## Hur det funkar
 
-Portalen är en EDP FutureWeb-installation. Tömningsdagarna ligger på en publik
-endpoint, men portalens adressökning returnerar inga träffar – därför loggar
-integrationen in **en gång** för att läsa vilket fastighets-ID ditt kundnummer
-hör till. ID:t sparas, och därefter hämtas schemat utan inloggning. Portalen
-belastas alltså minimalt och inloggningen används bara igen om schemat inte
-längre går att läsa.
+Portalen är en EDP FutureWeb-installation med två publika endpoints:
 
-BankID behövs inte; integrationen använder portalens formulärinloggning med
-kundnummer och personnummer.
+* `GetWastePickupSchedule` – JSON med **nästa** tömning per kärl, plus kärlets
+  storlek, typ och frekvens.
+* `DownloadWastePickup` – PDF med **hela** hämtschemat per kärl.
+
+Integrationen hämtar båda och slår ihop dem på tjänste-ID, så kalendern visar
+alla inplanerade tömningar och varje post vet vilken tunna det gäller.
+
+Portalens adressökning returnerar inga träffar, så en inloggning behövs för att
+läsa vilket fastighets-ID ditt kundnummer hör till. Det görs **en gång**; ID:t
+sparas och därefter hämtas allt utan inloggning. BankID behövs inte –
+integrationen använder portalens formulärinloggning med kundnummer och
+personnummer.
+
+PDF:en innehåller även namn och adress, men integrationen läser bara ut
+kärlnamn, tjänste-ID och datum. Inget av det andra sparas eller loggas.
 
 ## Felsökning
 
 | Symptom | Åtgärd |
 |---|---|
 | "Kombinationen … finns inte" | Kontrollera kundnummer och personnummer mot fakturan. Inga automatiska omförsök görs, eftersom portalen låser efter tre försök. |
+| Bara en tömning per kärl i kalendern | Hämtschemat (PDF:en) kunde inte läsas. Integrationen faller då tillbaka på nästa tömning per kärl och försöker igen vid nästa intervall. |
 | Sensorerna visar inget | Kontrollera att fastigheten har aktiva abonnemang i portalen. |
 | Entiteterna blir otillgängliga | Portalen kan ligga nere. Integrationen försöker igen vid nästa intervall. |
 
