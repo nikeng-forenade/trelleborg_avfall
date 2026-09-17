@@ -14,6 +14,7 @@ köras samtidigt som, eller i stället för, den.
 | `sensor.*_days_until_pickup` | Antal dagar kvar till nästa tömning |
 | `sensor.*_next_waste_type` | Vilken tunna som är näst på tur, t.ex. `Fyrfack 2` |
 | `sensor.*_fyrfack_1`, `*_fyrfack_2`, `*_restavfall` | En sensor per kärl med kärlets nästa tömning |
+| `sensor.*_fyrfack_1_days_until`, ... | Antal dagar kvar till just det kärlets tömning |
 | `binary_sensor.*_pickup_today` | På hela tömningsdagen |
 | `binary_sensor.*_pickup_tomorrow` | På hela dagen innan |
 | `calendar.*_pickups` | Alla tömningar som heldagshändelser |
@@ -140,14 +141,14 @@ automation:
   - alias: Påminnelse kvällen innan tömning
     triggers:
       - trigger: state
-        entity_id: binary_sensor.trelleborg_avfall_tomning_imorgon
+        entity_id: binary_sensor.trelleborg_avfall_pickup_tomorrow
         to: "on"
     actions:
       - action: notify.mobile_app_din_telefon
         data:
           title: "Tömning imorgon"
           message: >-
-            {{ state_attr('binary_sensor.trelleborg_avfall_tomning_imorgon',
+            {{ state_attr('binary_sensor.trelleborg_avfall_pickup_tomorrow',
                'waste_types') | join(', ') }}
 ```
 
@@ -158,28 +159,42 @@ automation:
   - alias: Ställ ut kärlet
     triggers:
       - trigger: state
-        entity_id: binary_sensor.trelleborg_avfall_tomning_idag
+        entity_id: binary_sensor.trelleborg_avfall_pickup_today
         to: "on"
     actions:
       - action: notify.mobile_app_din_telefon
         data:
           message: >-
-            Idag töms: {{ state_attr('binary_sensor.trelleborg_avfall_tomning_idag',
+            Idag töms: {{ state_attr('binary_sensor.trelleborg_avfall_pickup_today',
             'waste_types') | join(', ') }}
 ```
 
-### Bara vissa avfallstyper
+### Bara en viss tunna
+
+Enklast är att använda kärlets egen sensor. Den här körs dagen innan Fyrfack 2
+töms:
 
 ```yaml
+automation:
+  - alias: Påminnelse Fyrfack 2
     triggers:
-      - trigger: state
-        entity_id: binary_sensor.trelleborg_avfall_tomning_imorgon
-        to: "on"
+      - trigger: numeric_state
+        entity_id: sensor.trelleborg_avfall_fyrfack_2_days_until
+        below: 2
+    actions:
+      - action: notify.mobile_app_din_telefon
+        data:
+          message: "Fyrfack 2 töms imorgon"
+```
+
+Vill du i stället filtrera på avfallstyp kan du använda attributet `waste_types`:
+
+```yaml
     conditions:
       - condition: template
         value_template: >-
           {{ 'Trädgårdsavfall' in state_attr(
-             'binary_sensor.trelleborg_avfall_tomning_imorgon', 'waste_types') }}
+             'binary_sensor.trelleborg_avfall_pickup_tomorrow', 'waste_types') }}
 ```
 
 ## Hur det funkar

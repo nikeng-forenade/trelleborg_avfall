@@ -56,6 +56,12 @@
       },
       "next_waste_type": {
         "name": "Nästa tunna"
+      },
+      "service_next_pickup": {
+        "name": "{bin}"
+      },
+      "service_days_until": {
+        "name": "{bin} – dagar kvar"
       }
     },
     "binary_sensor": {

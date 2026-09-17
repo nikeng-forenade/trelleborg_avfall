@@ -18,7 +18,7 @@ from homeassistant.util import dt as dt_util
 
 from .api import Pickup
 from .const import DOMAIN
-from .coordinator import TrelleborgCoordinator
+from .coordinator import ScheduleData, TrelleborgCoordinator
 
 ICON_MAP = {
     "Fyrfack 1": "mdi:recycle",
@@ -48,6 +48,24 @@ def _device_info(coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> Devi
     )
 
 
+def _bin_name(schedule: ScheduleData, service_key: str) -> str:
+    """Kärlets namn, t.ex. 'Fyrfack 1'. Vid namnkolision läggs storleken till."""
+    services = schedule.services()
+    representative = services.get(service_key)
+    if representative is None:
+        return service_key
+
+    name = representative.waste_type
+    duplicates = [
+        key
+        for key, pickup in services.items()
+        if pickup.waste_type == name and key != service_key
+    ]
+    if duplicates and representative.bin_size:
+        return f"{name} ({representative.bin_size})"
+    return name
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -73,8 +91,14 @@ async def async_setup_entry(
             if service_key in known:
                 continue
             known.add(service_key)
+            bin_name = _bin_name(coordinator.data, service_key)
             new_entities.append(
-                TrelleborgServiceSensor(coordinator, entry, service_key)
+                TrelleborgServiceSensor(coordinator, entry, service_key, bin_name)
+            )
+            new_entities.append(
+                TrelleborgServiceDaysUntilSensor(
+                    coordinator, entry, service_key, bin_name
+                )
             )
         if new_entities:
             async_add_entities(new_entities)
@@ -227,6 +251,7 @@ class TrelleborgNextWasteTypeSensor(TrelleborgSensorBase):
 class TrelleborgServiceSensor(TrelleborgSensorBase):
     """Nästa tömning för ett enskilt kärl."""
 
+    _attr_translation_key = "service_next_pickup"
     _attr_device_class = SensorDeviceClass.DATE
     _attr_icon = "mdi:trash-can"
 
@@ -235,29 +260,14 @@ class TrelleborgServiceSensor(TrelleborgSensorBase):
         coordinator: TrelleborgCoordinator,
         entry: ConfigEntry,
         service_key: str,
+        bin_name: str,
     ) -> None:
         super().__init__(coordinator, entry, f"service_{service_key}")
         self._service_key = service_key
-        self._attr_name = self._build_name()
+        self._attr_translation_placeholders = {"bin": bin_name}
 
     def _representative(self) -> Pickup | None:
         return self.coordinator.data.services().get(self._service_key)
-
-    def _build_name(self) -> str:
-        """Kärlets namn, t.ex. 'Fyrfack 1'. Vid namnkolision läggs storleken till."""
-        representative = self._representative()
-        if representative is None:
-            return self._service_key
-
-        name = representative.waste_type
-        duplicates = [
-            key
-            for key, pickup in self.coordinator.data.services().items()
-            if pickup.waste_type == name and key != self._service_key
-        ]
-        if duplicates and representative.bin_size:
-            return f"{name} ({representative.bin_size})"
-        return name
 
     @property
     def native_value(self) -> dt.date | None:
@@ -285,4 +295,41 @@ class TrelleborgServiceSensor(TrelleborgSensorBase):
             "frequency": pickup.frequency,
             "days_until": (pickup.date - self._today).days,
             "upcoming": [item.date.isoformat() for item in upcoming],
+        }
+
+
+class TrelleborgServiceDaysUntilSensor(TrelleborgSensorBase):
+    """Antal dagar kvar till ett enskilt kärls nästa tömning."""
+
+    _attr_translation_key = "service_days_until"
+    _attr_icon = "mdi:calendar-today"
+    _attr_native_unit_of_measurement = "d"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(
+        self,
+        coordinator: TrelleborgCoordinator,
+        entry: ConfigEntry,
+        service_key: str,
+        bin_name: str,
+    ) -> None:
+        super().__init__(coordinator, entry, f"service_{service_key}_days_until")
+        self._service_key = service_key
+        self._attr_translation_placeholders = {"bin": bin_name}
+
+    @property
+    def native_value(self) -> int | None:
+        pickup = self.coordinator.data.next_for(self._service_key)
+        return (pickup.date - self._today).days if pickup else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        pickup = self.coordinator.data.next_for(self._service_key)
+        if pickup is None:
+            return {}
+        return {
+            "date": pickup.date.isoformat(),
+            "waste_type": pickup.waste_type,
+            "bin": pickup.bin_label,
+            "bin_description": pickup.bin_description,
         }

@@ -56,6 +56,12 @@
       },
       "next_waste_type": {
         "name": "Next bin"
+      },
+      "service_next_pickup": {
+        "name": "{bin}"
+      },
+      "service_days_until": {
+        "name": "{bin} – days until"
       }
     },
     "binary_sensor": {
