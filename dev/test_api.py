@@ -6,6 +6,7 @@ miljövariablerna TBG_KUNDNUMMER / TBG_PERSONNUMMER.
 
 from __future__ import annotations
 
+import datetime as dt
 import importlib.util
 import os
 import pathlib
@@ -93,6 +94,23 @@ def main() -> int:
     full = len(client.fetch_schedule(building.id))
     print(f"   nästa per kärl : {json_only}")
     print(f"   hela schemat   : {full}")
+
+    print("\n5. Per kärl - det entiteterna visar ...")
+    groups: dict[str, list] = {}
+    for pickup in schedule:
+        groups.setdefault(pickup.service_key, []).append(pickup)
+
+    today = dt.datetime.now(dt.UTC).astimezone().date()
+    if len(groups) != 3:
+        print(f"   VARNING: förväntade 3 kärl, fick {len(groups)}")
+    for key, items in groups.items():
+        upcoming = [item for item in items if item.date >= today]
+        representative = items[0]
+        next_date = upcoming[0].date if upcoming else "-"
+        print(
+            f"   {representative.waste_type:11} nyckel={key:8} "
+            f"nästa={next_date}  kommande={len(upcoming)}"
+        )
 
     # OBS: inget test av felaktiga inloggningsuppgifter här.
     # Portalen låser inloggningen efter tre felaktiga försök.

@@ -10,17 +10,27 @@ köras samtidigt som, eller i stället för, den.
 
 | Entitet | Vad den gör |
 |---|---|
-| `sensor.*_nasta_tomning` | Datum för nästa tömning, med tunnan och hela den kommande listan som attribut |
-| `binary_sensor.*_tomning_idag` | På hela tömningsdagen |
-| `binary_sensor.*_tomning_imorgon` | På hela dagen innan |
-| `calendar.*_tomningar` | Alla tömningar som heldagshändelser |
+| `sensor.*_next_pickup` | Datum för nästa tömning (alla kommande i attributet `upcoming`) |
+| `sensor.*_days_until_pickup` | Antal dagar kvar till nästa tömning |
+| `sensor.*_next_waste_type` | Vilken tunna som är näst på tur, t.ex. `Fyrfack 2` |
+| `sensor.*_fyrfack_1`, `*_fyrfack_2`, `*_restavfall` | En sensor per kärl med kärlets nästa tömning |
+| `binary_sensor.*_pickup_today` | På hela tömningsdagen |
+| `binary_sensor.*_pickup_tomorrow` | På hela dagen innan |
+| `calendar.*_pickups` | Alla tömningar som heldagshändelser |
+
+En sensor per kärl skapas automatiskt utifrån dina abonnemang, så antalet
+varierar beroende på vad du har.
+
+> Entitets-ID:na följer integrationens namn. Kör du Home Assistant på svenska blir
+de i stället `sensor.*_nasta_tomning`, `binary_sensor.*_tomning_imorgon` och så
+vidare – kolla under *Utvecklarverktyg → Tillstånd*.
 
 De två binära sensorerna slår om strax efter midnatt, så automationer med
 `to: "on"` körs rätt dag.
 
 ### Attribut att bygga automationer på
 
-**`binary_sensor.*_tomning_idag` / `*_tomning_imorgon`**
+**`binary_sensor.*_pickup_today` / `*_pickup_tomorrow`**
 
 | Attribut | Exempel |
 |---|---|
@@ -29,7 +39,7 @@ De två binära sensorerna slår om strax efter midnatt, så automationer med
 | `bins` | `["370 l Fyrfackskärl", "190 l Kärl"]` |
 | `bin_descriptions` | `["Kärl, 370 L fyrfack. Kärl 1. Var 14:e dag", ...]` |
 
-**`sensor.*_nasta_tomning`**
+**`sensor.*_next_pickup`**
 
 | Attribut | Exempel |
 |---|---|
@@ -41,7 +51,8 @@ De två binära sensorerna slår om strax efter midnatt, så automationer med
 
 ### Var ser jag allt?
 
-Enhetskortet visar bara entiteternas huvudstatus. Detaljerna ligger i attributen.
+Det mesta finns som egna entiteter (tabellen ovan). Attributen är kvar för
+avancerade mallar och innehåller hela den kommande listan.
 
 **Alla attribut:** *Utvecklarverktyg → Tillstånd* (Developer Tools → States), sök på
 `trelleborg_avfall` och klicka på entiteten. Där finns `upcoming` med hela schemat.

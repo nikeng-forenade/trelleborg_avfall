@@ -50,6 +50,12 @@
     "sensor": {
       "next_pickup": {
         "name": "Next pickup"
+      },
+      "days_until_pickup": {
+        "name": "Days until pickup"
+      },
+      "next_waste_type": {
+        "name": "Next bin"
       }
     },
     "binary_sensor": {

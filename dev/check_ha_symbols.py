@@ -34,7 +34,11 @@ CHECKS: dict[str, tuple[str, ...]] = {
     "helpers/entity_platform.py": ("AddEntitiesCallback",),
     "helpers/event.py": ("async_track_time_change",),
     "util/dt.py": ("as_local", "start_of_local_day"),
-    "components/sensor/__init__.py": ("SensorDeviceClass", "SensorEntity"),
+    "components/sensor/__init__.py": (
+        "SensorDeviceClass",
+        "SensorEntity",
+        "SensorStateClass",
+    ),
     "components/binary_sensor/__init__.py": ("BinarySensorEntity",),
     "components/calendar/__init__.py": ("CalendarEntity", "CalendarEvent"),
 }

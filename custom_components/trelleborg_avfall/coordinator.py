@@ -50,6 +50,29 @@ class ScheduleData:
         start = from_day or dt_util.now().date()
         return [pickup for pickup in self.pickups if pickup.date >= start]
 
+    def services(self) -> dict[str, Pickup]:
+        """Unika kärl, med ett representativt exemplar per kärl."""
+        found: dict[str, Pickup] = {}
+        for pickup in self.pickups:
+            found.setdefault(pickup.service_key, pickup)
+        return found
+
+    def next_for(
+        self, service_key: str, from_day: dt.date | None = None
+    ) -> Pickup | None:
+        """Nästa tömning för ett enskilt kärl."""
+        start = from_day or dt_util.now().date()
+        for pickup in self.pickups:
+            if pickup.service_key == service_key and pickup.date >= start:
+                return pickup
+        return None
+
+    def upcoming_for(self, service_key: str) -> list[Pickup]:
+        """Alla kommande tömningar för ett enskilt kärl."""
+        return [
+            pickup for pickup in self.upcoming() if pickup.service_key == service_key
+        ]
+
 
 class TrelleborgCoordinator(DataUpdateCoordinator[ScheduleData]):
     """Uppdaterar schemat med ett intervall som användaren kan ställa in."""

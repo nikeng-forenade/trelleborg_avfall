@@ -120,6 +120,11 @@ class Pickup:
         """Kort beskrivning av tunnan, t.ex. '370 l Fyrfackskärl'."""
         return " ".join(part for part in (self.bin_size, self.container_type) if part)
 
+    @property
+    def service_key(self) -> str:
+        """Stabil nyckel för tjänsten, dvs. den fysiska tunnan."""
+        return self.service_id or self.waste_type
+
 
 @dataclass(frozen=True)
 class ServiceCalendar:

@@ -50,6 +50,12 @@
     "sensor": {
       "next_pickup": {
         "name": "Nästa tömning"
+      },
+      "days_until_pickup": {
+        "name": "Dagar till tömning"
+      },
+      "next_waste_type": {
+        "name": "Nästa tunna"
       }
     },
     "binary_sensor": {

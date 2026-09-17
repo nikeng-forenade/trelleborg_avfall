@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import datetime as dt
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -35,39 +39,84 @@ WEEKDAYS = (
 )
 
 
+def _device_info(coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> DeviceInfo:
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        name="Trelleborg Avfall",
+        manufacturer="Trelleborgs kommun",
+        model=coordinator.data.building_label or entry.title,
+    )
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: TrelleborgCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([TrelleborgNextPickupSensor(coordinator, entry)])
+
+    async_add_entities(
+        [
+            TrelleborgNextPickupSensor(coordinator, entry),
+            TrelleborgDaysUntilSensor(coordinator, entry),
+            TrelleborgNextWasteTypeSensor(coordinator, entry),
+        ]
+    )
+
+    # Ett kärl per tjänst. Nya kärl som dyker upp senare läggs till löpande.
+    known: set[str] = set()
+
+    @callback
+    def _async_add_new_services() -> None:
+        new_entities: list[SensorEntity] = []
+        for service_key in coordinator.data.services():
+            if service_key in known:
+                continue
+            known.add(service_key)
+            new_entities.append(
+                TrelleborgServiceSensor(coordinator, entry, service_key)
+            )
+        if new_entities:
+            async_add_entities(new_entities)
+
+    _async_add_new_services()
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_services))
 
 
-class TrelleborgNextPickupSensor(
-    CoordinatorEntity[TrelleborgCoordinator], SensorEntity
-):
-    """Datum för nästa hämtning, med kommande tömningar som attribut."""
+class TrelleborgSensorBase(CoordinatorEntity[TrelleborgCoordinator], SensorEntity):
+    """Gemensam bas med enhetsinfo och hjälpare."""
 
     _attr_has_entity_name = True
-    _attr_translation_key = "next_pickup"
-    _attr_device_class = SensorDeviceClass.DATE
-    _attr_icon = "mdi:calendar-clock"
 
-    def __init__(self, coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        coordinator: TrelleborgCoordinator,
+        entry: ConfigEntry,
+        unique_suffix: str,
+    ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_next_pickup"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            name="Trelleborg Avfall",
-            manufacturer="Trelleborgs kommun",
-            model=coordinator.data.building_label or entry.title,
-        )
+        self._attr_unique_id = f"{entry.entry_id}_{unique_suffix}"
+        self._attr_device_info = _device_info(coordinator, entry)
+
+    @property
+    def _today(self) -> dt.date:
+        return dt_util.now().date()
 
     @property
     def _next(self) -> Pickup | None:
         upcoming = self.coordinator.data.upcoming()
         return upcoming[0] if upcoming else None
+
+
+class TrelleborgNextPickupSensor(TrelleborgSensorBase):
+    """Datum för nästa hämtning, med kommande tömningar som attribut."""
+
+    _attr_translation_key = "next_pickup"
+    _attr_device_class = SensorDeviceClass.DATE
+    _attr_icon = "mdi:calendar-clock"
+
+    def __init__(self, coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "next_pickup")
 
     @property
     def native_value(self) -> dt.date | None:
@@ -88,7 +137,7 @@ class TrelleborgNextPickupSensor(
         if pickup is None:
             return {"upcoming": []}
 
-        today = dt_util.now().date()
+        today = self._today
         return {
             "waste_type": pickup.waste_type,
             "bin": pickup.bin_label,
@@ -109,4 +158,131 @@ class TrelleborgNextPickupSensor(
                 }
                 for item in upcoming
             ],
+        }
+
+
+class TrelleborgDaysUntilSensor(TrelleborgSensorBase):
+    """Antal dagar till nästa tömning."""
+
+    _attr_translation_key = "days_until_pickup"
+    _attr_icon = "mdi:calendar-today"
+    _attr_native_unit_of_measurement = "d"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "days_until_pickup")
+
+    @property
+    def native_value(self) -> int | None:
+        pickup = self._next
+        return (pickup.date - self._today).days if pickup else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        pickup = self._next
+        if pickup is None:
+            return {}
+        return {
+            "date": pickup.date.isoformat(),
+            "waste_type": pickup.waste_type,
+            "bin": pickup.bin_label,
+            "bin_description": pickup.bin_description,
+        }
+
+
+class TrelleborgNextWasteTypeSensor(TrelleborgSensorBase):
+    """Vilken tunna som är näst på tur."""
+
+    _attr_translation_key = "next_waste_type"
+    _attr_icon = "mdi:trash-can"
+
+    def __init__(self, coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "next_waste_type")
+
+    @property
+    def native_value(self) -> str | None:
+        pickup = self._next
+        return pickup.waste_type if pickup else None
+
+    @property
+    def icon(self) -> str:
+        pickup = self._next
+        if pickup is None:
+            return "mdi:trash-can"
+        return ICON_MAP.get(pickup.waste_type, "mdi:trash-can")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        pickup = self._next
+        if pickup is None:
+            return {}
+        return {
+            "date": pickup.date.isoformat(),
+            "bin": pickup.bin_label,
+            "bin_description": pickup.bin_description,
+            "days_until": (pickup.date - self._today).days,
+        }
+
+
+class TrelleborgServiceSensor(TrelleborgSensorBase):
+    """Nästa tömning för ett enskilt kärl."""
+
+    _attr_device_class = SensorDeviceClass.DATE
+    _attr_icon = "mdi:trash-can"
+
+    def __init__(
+        self,
+        coordinator: TrelleborgCoordinator,
+        entry: ConfigEntry,
+        service_key: str,
+    ) -> None:
+        super().__init__(coordinator, entry, f"service_{service_key}")
+        self._service_key = service_key
+        self._attr_name = self._build_name()
+
+    def _representative(self) -> Pickup | None:
+        return self.coordinator.data.services().get(self._service_key)
+
+    def _build_name(self) -> str:
+        """Kärlets namn, t.ex. 'Fyrfack 1'. Vid namnkolision läggs storleken till."""
+        representative = self._representative()
+        if representative is None:
+            return self._service_key
+
+        name = representative.waste_type
+        duplicates = [
+            key
+            for key, pickup in self.coordinator.data.services().items()
+            if pickup.waste_type == name and key != self._service_key
+        ]
+        if duplicates and representative.bin_size:
+            return f"{name} ({representative.bin_size})"
+        return name
+
+    @property
+    def native_value(self) -> dt.date | None:
+        pickup = self.coordinator.data.next_for(self._service_key)
+        return pickup.date if pickup else None
+
+    @property
+    def icon(self) -> str:
+        representative = self._representative()
+        if representative is None:
+            return "mdi:trash-can"
+        return ICON_MAP.get(representative.waste_type, "mdi:trash-can")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        upcoming = self.coordinator.data.upcoming_for(self._service_key)
+        if not upcoming:
+            return {}
+
+        pickup = upcoming[0]
+        return {
+            "waste_type": pickup.waste_type,
+            "bin": pickup.bin_label,
+            "bin_description": pickup.bin_description,
+            "frequency": pickup.frequency,
+            "days_until": (pickup.date - self._today).days,
+            "upcoming": [item.date.isoformat() for item in upcoming],
         }
