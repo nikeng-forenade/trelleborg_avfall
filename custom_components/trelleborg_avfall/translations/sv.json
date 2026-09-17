@@ -1,0 +1,69 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Trelleborg Avfall",
+        "description": "Ange kundnummer och personnummer från din faktura från Kretslopp och vatten. OBS: portalen låser inloggningen efter tre felaktiga försök.",
+        "data": {
+          "customer_id": "Kundnummer",
+          "identification_number": "Personnummer / organisationsnummer",
+          "street_address": "Adress (valfritt)"
+        },
+        "data_description": {
+          "identification_number": "12 siffror (ÅÅÅÅMMDDXXXX), eller organisationsnummer med inledande 00.",
+          "street_address": "Behövs bara om kontot har fler än en fastighet."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Logga in mot Trelleborg igen",
+        "description": "Portalen accepterar inte längre de sparade uppgifterna.",
+        "data": {
+          "customer_id": "Kundnummer",
+          "identification_number": "Personnummer / organisationsnummer",
+          "street_address": "Adress (valfritt)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Kombinationen av kundnummer och personnummer/organisationsnummer finns inte. Kontrollera båda värdena innan du försöker igen – portalen låser inloggningen efter tre felaktiga försök.",
+      "no_building": "Kontot har ingen fastighet med avfallshämtning.",
+      "building_not_found": "Ingen fastighet på kontot matchade adressen, eller så matchade flera. Kontots fastigheter: {buildings}",
+      "cannot_connect": "Kunde inte nå kundportalen. Försök igen senare."
+    },
+    "abort": {
+      "already_configured": "Den här fastigheten är redan tillagd.",
+      "reauth_successful": "Den nya inloggningen sparades."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Uppdateringsintervall",
+        "description": "Hur ofta hämtningsdagarna hämtas från portalen. De ändras sällan, så ett långt intervall räcker och belastar portalen mindre.",
+        "data": {
+          "scan_interval_minutes": "Hämta nya tider var"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_pickup": {
+        "name": "Nästa tömning"
+      }
+    },
+    "binary_sensor": {
+      "pickup_today": {
+        "name": "Tömning idag"
+      },
+      "pickup_tomorrow": {
+        "name": "Tömning imorgon"
+      }
+    },
+    "calendar": {
+      "pickups": {
+        "name": "Tömningar"
+      }
+    }
+  }
+}

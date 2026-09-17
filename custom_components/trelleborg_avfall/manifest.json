@@ -1,0 +1,12 @@
+{
+  "domain": "trelleborg_avfall",
+  "name": "Trelleborg Avfall",
+  "codeowners": ["@nikeng-forenade"],
+  "config_flow": true,
+  "documentation": "https://github.com/nikeng-forenade/trelleborg_avfall",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/nikeng-forenade/trelleborg_avfall/issues",
+  "requirements": ["beautifulsoup4>=4.12.2", "requests>=2.31.0"],
+  "version": "1.0.0"
+}

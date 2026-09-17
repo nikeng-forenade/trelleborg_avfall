@@ -1,0 +1,69 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Trelleborg Avfall",
+        "description": "Enter the customer number (kundnummer) and personal number from your invoice from Kretslopp och vatten. Note that the portal locks the login after three failed attempts.",
+        "data": {
+          "customer_id": "Customer number",
+          "identification_number": "Personal / organisation number",
+          "street_address": "Street address (optional)"
+        },
+        "data_description": {
+          "identification_number": "12 digits (YYYYMMDDXXXX), or an organisation number prefixed with 00.",
+          "street_address": "Only needed when your account has more than one property."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Log in to Trelleborg again",
+        "description": "The portal no longer accepts the stored credentials.",
+        "data": {
+          "customer_id": "Customer number",
+          "identification_number": "Personal / organisation number",
+          "street_address": "Street address (optional)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The combination of customer number and personal/organisation number was not found. Check both values before trying again - the portal locks the login after three failed attempts.",
+      "no_building": "The account has no property with waste collection.",
+      "building_not_found": "No property on the account matched the given street address, or several did. Available properties: {buildings}",
+      "cannot_connect": "Could not reach the customer portal. Try again later."
+    },
+    "abort": {
+      "already_configured": "This property is already configured.",
+      "reauth_successful": "The new login was saved."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Update interval",
+        "description": "How often the pickup days are fetched from the portal. Pickup days change rarely, so a long interval is fine and gentle on the portal.",
+        "data": {
+          "scan_interval_minutes": "Fetch new times every"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_pickup": {
+        "name": "Next pickup"
+      }
+    },
+    "binary_sensor": {
+      "pickup_today": {
+        "name": "Pickup today"
+      },
+      "pickup_tomorrow": {
+        "name": "Pickup tomorrow"
+      }
+    },
+    "calendar": {
+      "pickups": {
+        "name": "Pickups"
+      }
+    }
+  }
+}
