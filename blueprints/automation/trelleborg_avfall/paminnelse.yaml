@@ -46,9 +46,10 @@ blueprint:
     message:
       name: Meddelandetext
       description: >-
-        Variabler du kan använda: `trelleborg_when` (idag/imorgon),
-        `trelleborg_date`, `trelleborg_waste_types` (t.ex. Fyrfack 2) och
-        `trelleborg_bins` (kärlen, t.ex. 370 l Fyrfackskärl).
+        Skriv bara själva texten här – ingen åtgärd. Texten byggs av
+        `trelleborg_when` (idag/imorgon), `trelleborg_date`,
+        `trelleborg_waste_types` (t.ex. Fyrfack 2) och `trelleborg_bins`
+        (kärlen, t.ex. 370 l Fyrfackskärl).
       default: >-
         {{ trelleborg_waste_types }} töms {{ trelleborg_when }}
         ({{ trelleborg_date }}). Kärl: {{ trelleborg_bins }}.
@@ -57,9 +58,11 @@ blueprint:
     notify_action:
       name: Hur ska meddelandet skickas?
       description: >-
-        Ändra tjänsten i rutan. Mobilappen: `notify.mobile_app_din_telefon`.
-        Telegram: `telegram_bot.send_message` med `chat_id: 123456789`.
-        Texten finns i `{{ trelleborg_title }}` och `{{ trelleborg_message }}`.
+        Här läggs **åtgärden** som skickar meddelandet – det är den som avgör
+        kanal. Använd `{{ trelleborg_title }}` och `{{ trelleborg_message }}`
+        som rubrik och text, och skriv inte meddelandet här.
+        Mobilappen: `notify.mobile_app_din_telefon`. Telegram:
+        `telegram_bot.send_message` med `chat_id: 123456789`.
       default:
         - action: notify.mobile_app_din_telefon
           data:

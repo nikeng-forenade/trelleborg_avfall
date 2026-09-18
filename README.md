@@ -207,6 +207,11 @@ Vill du i stället filtrera på avfallstyp kan du använda attributet `waste_typ
 Båda blueprintarna har fält för rubrik och meddelandetext, så du kan ändra
 ordalydelsen direkt i formuläret utan att röra YAML.
 
+> **Fälten gör olika saker.** *Rubrik* och *Meddelandetext* är texten som skickas
+> (bara text, ingen åtgärd). *Hur ska meddelandet skickas?* är själva åtgärden,
+> och där ska `{{ trelleborg_title }}` / `{{ trelleborg_message }}` användas som
+> rubrik och text – skriv inte meddelandet där.
+
 ### Så här får du in blueprinten
 
 **1. Importera.** Enklast är knapparna här – de öppnar din egen Home Assistant
@@ -353,6 +358,7 @@ kärlnamn, tjänste-ID och datum. Inget av det andra sparas eller loggas.
 
 | Symptom | Åtgärd |
 |---|---|
+| Meddelandet blir bara "test" (eller något annat hårdkodat) | Texten ligger i **åtgärden** i stället för i fältet *Meddelandetext*. Öppna åtgärden i sista rutan (*tre prickar → Redigera i YAML*) och sätt `message: "{{ trelleborg_message }}"` och `title: "{{ trelleborg_title }}"`. Ordalydelsen skriver du i *Meddelandetext* ovanför. |
 | `UndefinedError: 'dict object' has no attribute 'entity_id'` | Du kör en **äldre version** av blueprinten (v1.5.2 eller tidigare), där texten lästes från `trigger.entity_id`. Importera om samma adress – Home Assistant frågar om den ska skrivas över. I v1.5.3 och senare läses sensorn från formuläret, så manuella körningar fungerar. |
 | "Kombinationen … finns inte" | Kontrollera kundnummer och personnummer mot fakturan. Inga automatiska omförsök görs, eftersom portalen låser efter tre försök. |
 | Bara en tömning per kärl i kalendern | Hämtschemat (PDF:en) kunde inte läsas. Integrationen faller då tillbaka på nästa tömning per kärl och försöker igen vid nästa intervall. |

@@ -65,9 +65,10 @@ blueprint:
     message:
       name: Meddelandetext
       description: >-
-        Mallen har `trelleborg_sensor` och `trelleborg_days` tillgängliga. Varje
-        post `p` har `date`, `waste_type`, `bin`, `bin_description` och
-        `days_until` – ta bort `{{ p.bin }}` om du inte vill ha kärlnamnet.
+        Skriv bara själva texten/mallen här – ingen åtgärd. Mallen har
+        `trelleborg_sensor` och `trelleborg_days` tillgängliga. Varje post `p`
+        har `date`, `waste_type`, `bin`, `bin_description` och `days_until` –
+        ta bort `{{ p.bin }}` om du inte vill ha kärlnamnet.
       default: |-
         Kommande tömningar:
         {%- set upcoming = (state_attr(trelleborg_sensor, 'upcoming') or [])
@@ -80,9 +81,11 @@ blueprint:
     notify_action:
       name: Hur ska meddelandet skickas?
       description: >-
-        Ändra tjänsten i rutan. Mobilappen: `notify.mobile_app_din_telefon`.
-        Telegram: `telegram_bot.send_message` med `chat_id: 123456789`.
-        Texten finns i `{{ trelleborg_title }}` och `{{ trelleborg_message }}`.
+        Här läggs **åtgärden** som skickar meddelandet – det är den som avgör
+        kanal. Använd `{{ trelleborg_title }}` och `{{ trelleborg_message }}`
+        som rubrik och text, och skriv inte meddelandet här.
+        Mobilappen: `notify.mobile_app_din_telefon`. Telegram:
+        `telegram_bot.send_message` med `chat_id: 123456789`.
       default:
         - action: notify.mobile_app_din_telefon
           data:
