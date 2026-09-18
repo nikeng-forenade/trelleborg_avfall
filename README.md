@@ -305,6 +305,12 @@ Saknas chatten: skicka ett meddelande till [@id_bot](https://t.me/id_bot) och
 lägg till ID:t under **Inställningar → Enheter och tjänster → Telegram bot →
 Lägg till tillåtet chatt-ID**. Notify-entiteten dyker upp direkt efteråt.
 
+> **Blanda inte ihop dem.** `notify.send_message` tar en **entitet**
+> (`entity_id: notify.telegram_bot_<chatt>`), medan `telegram_bot.send_message`
+> tar **chat_id** (siffror). Lägger du `entity_id` i `telegram_bot.send_message`
+> skickas ingen text, och skriver du texten direkt i åtgärden i stället för att
+> använda `{{ trelleborg_message }}` blir meddelandet hårdkodat.
+
 > `title` blir en extra rubrikrad i Telegram. Vill du hellre ha rubriken först i
 > själva meddelandet tar du bort `title` och skriver
 > `message: "{{ trelleborg_title }}\n{{ trelleborg_message }}"`.
