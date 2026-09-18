@@ -1,0 +1,96 @@
+blueprint:
+  name: Trelleborg Avfall – påminnelse före tömning
+  description: >-
+    Skickar en påminnelse när ett kärl ska ställas ut.
+
+    Välj den binära sensorn **Tömning idag** eller **Tömning imorgon**. Sensorn
+    slår om strax efter midnatt – med standardvärdet 18 timmars väntetid kommer
+    påminnelsen kl 18 dagen innan tömning.
+
+    Hur meddelandet skickas bestämmer du i sista rutan: mobilappen
+    (`notify.mobile_app_...`), Telegram (`telegram_bot.send_message`) eller
+    något annat. Texten finns färdig i `{{ trelleborg_title }}` och
+    `{{ trelleborg_message }}`.
+  domain: automation
+  author: nikeng-forenade
+  source_url: https://github.com/nikeng-forenade/trelleborg_avfall/blob/main/blueprints/automation/trelleborg_avfall/paminnelse.yaml
+  input:
+    pickup_sensor:
+      name: Sensor
+      description: >-
+        Välj `binary_sensor.*_pickup_today` (påminnelse samma dag) eller
+        `binary_sensor.*_pickup_tomorrow` (påminnelse dagen innan).
+        Entitets-ID ser du under Utvecklarverktyg → Tillstånd.
+      selector:
+        entity:
+          filter:
+            - integration: trelleborg_avfall
+              domain: binary_sensor
+    send_after:
+      name: Väntetid innan meddelandet skickas
+      description: >-
+        Sensorn slår om strax efter midnatt. 18 timmar ger påminnelsen kl 18
+        dagen innan tömning. Sätt 0 för att skicka direkt på natten.
+      default:
+        hours: 18
+      selector:
+        duration:
+    title:
+      name: Rubrik
+      default: "Tömning {{ trelleborg_when }}"
+      selector:
+        text:
+    message:
+      name: Meddelandetext
+      description: >-
+        Variabler du kan använda: `trelleborg_when` (idag/imorgon),
+        `trelleborg_date`, `trelleborg_waste_types` och `trelleborg_bins`.
+      default: >-
+        {{ trelleborg_waste_types }} töms {{ trelleborg_when }}
+        ({{ trelleborg_date }}). Ställ ut: {{ trelleborg_bins }}.
+      selector:
+        template:
+    notify_action:
+      name: Hur ska meddelandet skickas?
+      description: >-
+        Ändra tjänsten i rutan. Mobilappen: `notify.mobile_app_din_telefon`.
+        Telegram: `telegram_bot.send_message` med `chat_id: 123456789`.
+        Texten finns i `{{ trelleborg_title }}` och `{{ trelleborg_message }}`.
+      default:
+        - action: notify.mobile_app_din_telefon
+          data:
+            title: "{{ trelleborg_title }}"
+            message: "{{ trelleborg_message }}"
+      selector:
+        action:
+
+mode: single
+
+triggers:
+  - trigger: state
+    entity_id: !input pickup_sensor
+    to: "on"
+    for: !input send_after
+
+conditions: []
+
+actions:
+  - alias: "Läs av tömningen"
+    variables:
+      trelleborg_date: "{{ state_attr(trigger.entity_id, 'date') }}"
+      trelleborg_waste_types: >-
+        {{ state_attr(trigger.entity_id, 'waste_types') | join(', ') }}
+      trelleborg_bins: "{{ state_attr(trigger.entity_id, 'bins') | join(', ') }}"
+      trelleborg_when: >-
+        {{ 'idag' if state_attr(trigger.entity_id, 'date') == now().date() | string
+           else 'imorgon' }}
+  - alias: "Rubrik och text"
+    variables:
+      trelleborg_title: !input title
+      trelleborg_message: !input message
+  - alias: "Skicka meddelandet"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ true }}"
+        sequence: !input notify_action

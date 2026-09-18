@@ -1,0 +1,115 @@
+blueprint:
+  name: Trelleborg Avfall – översikt över kommande tömningar
+  description: >-
+    Skickar en lista över de tömningar som är på väg, till exempel varje söndag
+    kl 18.
+
+    Datumen läses från `sensor.*_next_pickup` (attributet `upcoming`), så listan
+    innehåller hela den kända planen och inte bara nästa tömning.
+
+    Texten finns färdig i `{{ trelleborg_title }}` och `{{ trelleborg_message }}`
+    och kan skickas med valfri åtgärd (mobilapp, Telegram med mera).
+  domain: automation
+  author: nikeng-forenade
+  source_url: https://github.com/nikeng-forenade/trelleborg_avfall/blob/main/blueprints/automation/trelleborg_avfall/veckooversikt.yaml
+  input:
+    schedule_sensor:
+      name: Sensor med hela schemat
+      description: >-
+        Välj `sensor.*_next_pickup` – den sensor som har attributet `upcoming`.
+      selector:
+        entity:
+          filter:
+            - integration: trelleborg_avfall
+              domain: sensor
+    days_ahead:
+      name: Antal dagar framåt
+      default: 14
+      selector:
+        number:
+          min: 1
+          max: 120
+          unit_of_measurement: dagar
+    weekday:
+      name: Vilken dag skickas översikten?
+      default: "any"
+      selector:
+        select:
+          options:
+            - label: Varje dag
+              value: "any"
+            - label: Måndag
+              value: "1"
+            - label: Tisdag
+              value: "2"
+            - label: Onsdag
+              value: "3"
+            - label: Torsdag
+              value: "4"
+            - label: Fredag
+              value: "5"
+            - label: Lördag
+              value: "6"
+            - label: Söndag
+              value: "7"
+    send_at:
+      name: Tidpunkt
+      default: "18:00:00"
+      selector:
+        time:
+    title:
+      name: Rubrik
+      default: Kommande tömningar
+      selector:
+        text:
+    notify_action:
+      name: Hur ska meddelandet skickas?
+      description: >-
+        Ändra tjänsten i rutan. Mobilappen: `notify.mobile_app_din_telefon`.
+        Telegram: `telegram_bot.send_message` med `chat_id: 123456789`.
+        Texten finns i `{{ trelleborg_title }}` och `{{ trelleborg_message }}`.
+      default:
+        - action: notify.mobile_app_din_telefon
+          data:
+            title: "{{ trelleborg_title }}"
+            message: "{{ trelleborg_message }}"
+      selector:
+        action:
+
+variables:
+  trelleborg_sensor: !input schedule_sensor
+  trelleborg_days: !input days_ahead
+  trelleborg_weekday: !input weekday
+
+mode: single
+
+triggers:
+  - trigger: time
+    at: !input send_at
+
+conditions:
+  - condition: template
+    value_template: >-
+      {{ trelleborg_weekday == 'any'
+         or now().isoweekday() == trelleborg_weekday | int }}
+  - condition: template
+    value_template: >-
+      {{ (state_attr(trelleborg_sensor, 'upcoming') or []) | length > 0 }}
+
+actions:
+  - alias: "Bygg rubrik och text"
+    variables:
+      trelleborg_title: !input title
+      trelleborg_message: |-
+        Kommande tömningar:
+        {%- set upcoming = (state_attr(trelleborg_sensor, 'upcoming') or [])
+             | selectattr('days_until', 'le', trelleborg_days | int) | list %}
+        {%- for p in upcoming %}
+        • {{ p.date }} – {{ p.waste_type }} ({{ 'idag' if p.days_until == 0 else ('imorgon' if p.days_until == 1 else 'om ' ~ p.days_until ~ ' dagar') }}), {{ p.bin }}
+        {%- endfor %}
+  - alias: "Skicka meddelandet"
+    choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ true }}"
+        sequence: !input notify_action

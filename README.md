@@ -197,6 +197,78 @@ Vill du i stället filtrera på avfallstyp kan du använda attributet `waste_typ
              'binary_sensor.trelleborg_avfall_pickup_tomorrow', 'waste_types') }}
 ```
 
+## Blueprints (färdiga automationer)
+
+Två färdiga blueprints ligger i repot – klicka för att importera dem direkt i
+din Home Assistant:
+
+[![Importera påminnelsen](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fnikeng-forenade%2Ftrelleborg_avfall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Ftrelleborg_avfall%2Fpaminnelse.yaml)
+
+[![Importera översikten](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fnikeng-forenade%2Ftrelleborg_avfall%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Ftrelleborg_avfall%2Fveckooversikt.yaml)
+
+| Blueprint | Vad den gör |
+|---|---|
+| **Påminnelse före tömning** | Skickar ett meddelande när kärlet ska ställas ut. Välj sensorn *Tömning idag* eller *Tömning imorgon* och en väntetid – 18 timmar ger påminnelsen kl 18 dagen innan. |
+| **Översikt över kommande tömningar** | Skickar hela listan, till exempel varje söndag kl 18. Antal dagar framåt ställs in. |
+
+> HACS installerar bara `custom_components/`. Blueprintarna importeras med
+> knapparna ovan, eller kopieras manuellt till
+> `/config/blueprints/automation/trelleborg_avfall/`.
+
+### Hur meddelandet skickas
+
+I sista rutan ("Hur ska meddelandet skickas?") väljer du själv leveranssätt –
+byt bara ut åtgärden mot din egen:
+
+| Kanal | Åtgärd |
+|---|---|
+| Mobilappen | `notify.mobile_app_din_telefon` |
+| Telegram | `telegram_bot.send_message` med `chat_id` |
+| Telegram som notify-entitet | `notify.send_message` mot `notify.telegram_bot_<chatt>` |
+| Persistent notification | `notify.persistent_notification` |
+| Högtalare | `tts.speak` / `media_player.play_media` |
+
+Texterna finns färdiga som variabler, så du behöver bara peka på dem:
+
+* `{{ trelleborg_title }}` – rubriken
+* `{{ trelleborg_message }}` – hela texten, färdig att skicka
+
+Telegram ser alltså ut så här:
+
+```yaml
+- action: telegram_bot.send_message
+  data:
+    chat_id: 123456789
+    message: "{{ trelleborg_message }}"
+    title: "{{ trelleborg_title }}"
+```
+
+`chat_id` hämtar du genom att skicka ett meddelande till
+[@id_bot](https://t.me/id_bot) och sedan lägga till ID:t under
+**Inställningar → Enheter och tjänster → Telegram bot → Lägg till tillåtet
+chatt-ID**. Då skapas också en notify-entitet per chatt
+(`notify.telegram_bot_<chatt>`), så `notify.send_message` fungerar lika bra.
+
+Med Telegram kan du dessutom stänga av förhandsvisning och styra formatering:
+
+```yaml
+- action: telegram_bot.send_message
+  data:
+    chat_id: 123456789
+    message: "{{ trelleborg_message }}"
+    disable_notification: true
+    message_thread_id: 42        # om chatten är ett forum med ämnen
+```
+
+### Variabler i påminnelsen
+
+| Variabel | Exempel |
+|---|---|
+| `trelleborg_when` | `imorgon` (eller `idag`) |
+| `trelleborg_date` | `2026-09-29` |
+| `trelleborg_waste_types` | `Fyrfack 1, Restavfall` |
+| `trelleborg_bins` | `370 l Fyrfackskärl, 190 l Kärl` |
+
 ## Hur det funkar
 
 Portalen är en EDP FutureWeb-installation med två publika endpoints:
