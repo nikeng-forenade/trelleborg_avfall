@@ -20,6 +20,7 @@ köras samtidigt som, eller i stället för, den.
 | `calendar.*_pickups` | Alla tömningar som heldagshändelser |
 | `binary_sensor.*_sync_ok` | På när senaste hämtningen från portalen lyckades, av vid fel |
 | `sensor.*_last_sync` | När schemat senast hämtades utan problem |
+| `sensor.*_sync_status` | Senaste hämtningens status som text: `ok` eller `error` |
 
 En sensor per kärl skapas automatiskt utifrån dina abonnemang, så antalet
 varierar beroende på vad du har.
@@ -38,6 +39,7 @@ Två diagnostiska entiteter visar hur det går med hämtningen mot portalen:
 | Entitet | Betydelse |
 |---|---|
 | `binary_sensor.*_sync_ok` | **På** = senaste hämtningen lyckades, **Av** = den misslyckades |
+| `sensor.*_sync_status` | `ok` eller `error` – samma sak som en text, lätt att visa på en dashboard |
 | `sensor.*_last_sync` | Tidpunkten för senaste lyckade hämtning |
 
 Båda har samma attribut:

@@ -65,6 +65,9 @@
       },
       "last_sync": {
         "name": "Senaste lyckade hämtning"
+      },
+      "sync_status": {
+        "name": "Hämtningsstatus"
       }
     },
     "binary_sensor": {

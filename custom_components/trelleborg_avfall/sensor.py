@@ -80,6 +80,7 @@ async def async_setup_entry(
             TrelleborgDaysUntilSensor(coordinator, entry),
             TrelleborgNextWasteTypeSensor(coordinator, entry),
             TrelleborgLastSyncSensor(coordinator, entry),
+            TrelleborgSyncStatusSensor(coordinator, entry),
         ]
     )
 
@@ -335,6 +336,40 @@ class TrelleborgServiceDaysUntilSensor(TrelleborgSensorBase):
             "bin": pickup.bin_label,
             "bin_description": pickup.bin_description,
         }
+
+
+class TrelleborgSyncStatusSensor(TrelleborgSensorBase):
+    """Status för senaste hämtningen, som text: 'ok' eller 'error'.
+
+    Lättare att visa på en dashboard än en binär sensor, och attributen säger
+    vad som gick fel.
+    """
+
+    _attr_translation_key = "sync_status"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["ok", "error"]
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: TrelleborgCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator, entry, "sync_status")
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def native_value(self) -> str:
+        return self.coordinator.sync_status
+
+    @property
+    def icon(self) -> str:
+        if self.coordinator.sync_status == "ok":
+            return "mdi:cloud-check"
+        return "mdi:cloud-off-outline"
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        return self.coordinator.status_attributes()
 
 
 class TrelleborgLastSyncSensor(TrelleborgSensorBase):
