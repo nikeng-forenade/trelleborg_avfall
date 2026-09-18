@@ -208,8 +208,11 @@ din Home Assistant:
 
 | Blueprint | Vad den gör |
 |---|---|
-| **Påminnelse före tömning** | Skickar ett meddelande när kärlet ska ställas ut. Välj sensorn *Tömning idag* eller *Tömning imorgon* och en väntetid – 18 timmar ger påminnelsen kl 18 dagen innan. |
+| **Påminnelse före tömning** | Skickar ett meddelande när det är dags för tömning. Välj sensorn *Tömning idag* eller *Tömning imorgon* och en väntetid – 18 timmar ger påminnelsen kl 18 dagen innan. |
 | **Översikt över kommande tömningar** | Skickar hela listan, till exempel varje söndag kl 18. Antal dagar framåt ställs in. |
+
+Båda blueprintarna har fält för rubrik och meddelandetext, så du kan ändra
+ordalydelsen direkt i formuläret utan att röra YAML.
 
 > HACS installerar bara `custom_components/`. Blueprintarna importeras med
 > knapparna ovan, eller kopieras manuellt till
