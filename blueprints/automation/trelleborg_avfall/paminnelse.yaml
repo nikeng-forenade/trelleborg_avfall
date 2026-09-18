@@ -44,11 +44,11 @@ blueprint:
       name: Meddelandetext
       description: >-
         Variabler du kan använda: `trelleborg_when` (idag/imorgon),
-        `trelleborg_date`, `trelleborg_waste_types` och `trelleborg_bins`
-        (kärlens namn, om du vill ha med dem).
+        `trelleborg_date`, `trelleborg_waste_types` (t.ex. Fyrfack 2) och
+        `trelleborg_bins` (kärlen, t.ex. 370 l Fyrfackskärl).
       default: >-
         {{ trelleborg_waste_types }} töms {{ trelleborg_when }}
-        ({{ trelleborg_date }}).
+        ({{ trelleborg_date }}). Kärl: {{ trelleborg_bins }}.
       selector:
         template:
     notify_action:

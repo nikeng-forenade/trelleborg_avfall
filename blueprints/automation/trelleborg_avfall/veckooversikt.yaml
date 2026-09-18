@@ -67,13 +67,13 @@ blueprint:
       description: >-
         Mallen har `trelleborg_sensor` och `trelleborg_days` tillgängliga. Varje
         post `p` har `date`, `waste_type`, `bin`, `bin_description` och
-        `days_until` – lägg till `{{ p.bin }}` om du vill ha med kärlets namn.
+        `days_until` – ta bort `{{ p.bin }}` om du inte vill ha kärlnamnet.
       default: |-
         Kommande tömningar:
         {%- set upcoming = (state_attr(trelleborg_sensor, 'upcoming') or [])
              | selectattr('days_until', 'le', trelleborg_days | int) | list %}
         {%- for p in upcoming %}
-        • {{ p.date }} – {{ p.waste_type }} ({{ 'idag' if p.days_until == 0 else ('imorgon' if p.days_until == 1 else 'om ' ~ p.days_until ~ ' dagar') }})
+        • {{ p.date }} – {{ p.waste_type }} ({{ 'idag' if p.days_until == 0 else ('imorgon' if p.days_until == 1 else 'om ' ~ p.days_until ~ ' dagar') }}), {{ p.bin }}
         {%- endfor %}
       selector:
         template:
