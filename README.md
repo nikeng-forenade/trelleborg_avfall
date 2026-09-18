@@ -18,6 +18,8 @@ köras samtidigt som, eller i stället för, den.
 | `binary_sensor.*_pickup_today` | På hela tömningsdagen |
 | `binary_sensor.*_pickup_tomorrow` | På hela dagen innan |
 | `calendar.*_pickups` | Alla tömningar som heldagshändelser |
+| `binary_sensor.*_sync_ok` | På när senaste hämtningen från portalen lyckades, av vid fel |
+| `sensor.*_last_sync` | När schemat senast hämtades utan problem |
 
 En sensor per kärl skapas automatiskt utifrån dina abonnemang, så antalet
 varierar beroende på vad du har.
@@ -28,6 +30,51 @@ vidare – kolla under *Utvecklarverktyg → Tillstånd*.
 
 De två binära sensorerna slår om strax efter midnatt, så automationer med
 `to: "on"` körs rätt dag.
+
+### Se att hämtningen funkar
+
+Två diagnostiska entiteter visar hur det går med hämtningen mot portalen:
+
+| Entitet | Betydelse |
+|---|---|
+| `binary_sensor.*_sync_ok` | **På** = senaste hämtningen lyckades, **Av** = den misslyckades |
+| `sensor.*_last_sync` | Tidpunkten för senaste lyckade hämtning |
+
+Båda har samma attribut:
+
+| Attribut | Exempel | Betydelse |
+|---|---|---|
+| `status` | `ok` / `error` | Senaste hämtningen |
+| `last_success` | `2026-09-18T06:12:03+02:00` | Senaste lyckade hämtning |
+| `last_attempt` | `2026-09-18T06:12:03+02:00` | Senaste försöket |
+| `last_error` | `Kunde inte nå portalen: ...` | Felmeddelandet, `null` när det funkar |
+| `last_error_time` | `2026-09-18T06:12:03+02:00` | När felet inträffade |
+| `consecutive_failures` | `0` | Misslyckade försök i rad |
+| `pickups` | `18` | Antal kända tömningar |
+| `next_refresh` | `2026-09-19T06:12:03+02:00` | Nästa hämtning (uppskattad) |
+
+De är alltid tillgängliga – även när hämtningen misslyckats – så att felet syns
+i gränssnittet i stället för att entiteterna bara blir otillgängliga.
+
+Vill du få ett meddelande när det strular:
+
+```yaml
+automation:
+  - alias: Trelleborg Avfall – hämtningen misslyckades
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.trelleborg_avfall_sync_ok
+        to: "off"
+        for:
+          minutes: 30
+    actions:
+      - action: notify.mobile_app_din_telefon
+        data:
+          title: "Trelleborg Avfall"
+          message: >-
+            Hämtningen misslyckades: {{ state_attr(
+              'binary_sensor.trelleborg_avfall_sync_ok', 'last_error') }}
+```
 
 ### Attribut att bygga automationer på
 

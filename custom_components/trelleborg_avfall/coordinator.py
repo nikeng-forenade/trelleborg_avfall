@@ -54,6 +54,11 @@ def scan_interval(entry: ConfigEntry) -> timedelta:
     return timedelta(days=DEFAULT_SCAN_INTERVAL_DAYS)
 
 
+def _iso(value: dt.datetime | None) -> str | None:
+    """Tidpunkt som ISO-text, eller None."""
+    return value.isoformat() if value is not None else None
+
+
 @dataclass(frozen=True)
 class ScheduleData:
     """Aktuellt schema för en fastighet."""
@@ -106,6 +111,15 @@ class TrelleborgCoordinator(DataUpdateCoordinator[ScheduleData]):
         self._building: Building | None = None
         self._base_interval = scan_interval(entry)
 
+        # Status för hämtningen. Visas av sensor.*_last_sync och
+        # binary_sensor.*_sync_ok så att en trasig hämtning syns i gränssnittet
+        # i stället för bara i loggen.
+        self.last_attempt: dt.datetime | None = None
+        self.last_success: dt.datetime | None = None
+        self.last_error: str | None = None
+        self.last_error_time: dt.datetime | None = None
+        self.consecutive_failures = 0
+
         super().__init__(
             hass,
             _LOGGER,
@@ -113,7 +127,45 @@ class TrelleborgCoordinator(DataUpdateCoordinator[ScheduleData]):
             update_interval=self._base_interval,
         )
 
+    @property
+    def sync_status(self) -> str:
+        """'ok' när senaste hämtningen lyckades, annars 'error'."""
+        return "ok" if self.last_update_success else "error"
+
+    def status_attributes(self) -> dict[str, object]:
+        """Status för hämtningen, till sensor.*_last_sync och *_sync_ok."""
+        next_refresh: str | None = None
+        if self.last_attempt is not None and self.update_interval is not None:
+            next_refresh = (self.last_attempt + self.update_interval).isoformat()
+
+        return {
+            "status": self.sync_status,
+            "last_attempt": _iso(self.last_attempt),
+            "last_success": _iso(self.last_success),
+            "last_error": self.last_error,
+            "last_error_time": _iso(self.last_error_time),
+            "consecutive_failures": self.consecutive_failures,
+            "pickups": len(self.data.pickups) if self.data else 0,
+            "next_refresh": next_refresh,
+        }
+
     async def _async_update_data(self) -> ScheduleData:
+        """Hämta schemat och håll reda på hur det går."""
+        self.last_attempt = dt_util.now()
+        try:
+            data = await self._async_fetch_schedule()
+        except Exception as err:  # noqa: BLE001 - allt som går fel ska synas
+            self.consecutive_failures += 1
+            self.last_error = str(err) or err.__class__.__name__
+            self.last_error_time = self.last_attempt
+            raise
+
+        self.consecutive_failures = 0
+        self.last_error = None
+        self.last_success = self.last_attempt
+        return data
+
+    async def _async_fetch_schedule(self) -> ScheduleData:
         building = self._building or self._building_from_entry()
 
         # Schemat ligger på en publik endpoint - kan vi redan fastighets-ID:t

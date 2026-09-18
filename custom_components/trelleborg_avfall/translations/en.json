@@ -62,6 +62,9 @@
       },
       "service_days_until": {
         "name": "{bin} – days until"
+      },
+      "last_sync": {
+        "name": "Last successful fetch"
       }
     },
     "binary_sensor": {
@@ -70,6 +73,9 @@
       },
       "pickup_tomorrow": {
         "name": "Pickup tomorrow"
+      },
+      "sync_ok": {
+        "name": "Fetch OK"
       }
     },
     "calendar": {

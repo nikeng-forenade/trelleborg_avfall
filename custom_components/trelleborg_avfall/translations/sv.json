@@ -62,6 +62,9 @@
       },
       "service_days_until": {
         "name": "{bin} – dagar kvar"
+      },
+      "last_sync": {
+        "name": "Senaste lyckade hämtning"
       }
     },
     "binary_sensor": {
@@ -70,6 +73,9 @@
       },
       "pickup_tomorrow": {
         "name": "Tömning imorgon"
+      },
+      "sync_ok": {
+        "name": "Hämtning OK"
       }
     },
     "calendar": {

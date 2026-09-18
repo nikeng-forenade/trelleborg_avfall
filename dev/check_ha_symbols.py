@@ -33,14 +33,18 @@ CHECKS: dict[str, tuple[str, ...]] = {
     "helpers/device_registry.py": ("DeviceInfo",),
     "helpers/entity_platform.py": ("AddEntitiesCallback",),
     "helpers/event.py": ("async_track_time_change",),
-    "util/dt.py": ("as_local", "start_of_local_day"),
+    "util/dt.py": ("as_local", "now", "start_of_local_day"),
     "components/sensor/__init__.py": (
         "SensorDeviceClass",
         "SensorEntity",
         "SensorStateClass",
     ),
-    "components/binary_sensor/__init__.py": ("BinarySensorEntity",),
+    "components/binary_sensor/__init__.py": (
+        "BinarySensorDeviceClass",
+        "BinarySensorEntity",
+    ),
     "components/calendar/__init__.py": ("CalendarEntity", "CalendarEvent"),
+    "const.py": ("EntityCategory",),
 }
 
 
