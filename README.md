@@ -235,7 +235,8 @@ automation →* välj **Trelleborg Avfall – påminnelse före tömning**. Fyll
 formuläret och spara.
 
 **3. Testa.** Öppna automationen och kör den manuellt (*tre prickar → Kör*).
-Standardtexten ser ut så här:
+Blueprinten läser av sensorn du valde, så du behöver inte vänta på midnatt –
+meddelandet skickas direkt. Standardtexten ser ut så här:
 
 ```text
 Tömning imorgon
@@ -244,6 +245,23 @@ Fyrfack 2 töms imorgon (2026-09-24). Kärl: 370 l Fyrfackskärl.
 
 Vill du uppdatera en blueprint senare importerar du bara samma adress igen –
 Home Assistant frågar om den ska skrivas över.
+
+### Testa hela kedjan
+
+Körningen ovan testar texten och åtgärden, men inte utlösaren. Vill du se att
+även triggern funkar:
+
+1. Sätt **Väntetid** till `0` medan du testar (annars dröjer det 18 timmar).
+2. *Utvecklarverktyg → Tillstånd*, leta upp `binary_sensor.*_pickup_today`,
+   klicka på kugghjulet, skriv `on` i *Tillstånd* och tryck **Ange tillstånd**.
+3. Automationen körs nu – titta i *Spårning* (Logbook/Spårning på
+   automationens sida) för att se stegen och vad mallarna gav.
+4. Sätt tillbaka väntetiden till `18`, och kör *Utvecklarverktyg → Tillstånd →
+   Uppdatera* på sensorn om du vill nolla testtillståndet (det skrivs annars
+   över automatiskt vid nästa uppdatering).
+
+Enskilda åtgärder (t.ex. Telegram) kan du testa löst under
+*Utvecklarverktyg → Åtgärder*: klistra in åtgärden och tryck **Utför åtgärd**.
 
 > HACS installerar bara `custom_components/`. Blueprintarna ligger i repot under
 > `blueprints/automation/trelleborg_avfall/` och måste importeras enligt ovan –

@@ -7,6 +7,9 @@ blueprint:
     slår om strax efter midnatt – med standardvärdet 18 timmars väntetid kommer
     påminnelsen kl 18 dagen innan tömning.
 
+    Texten läses av från sensorn du väljer, så du kan köra automationen manuellt
+    för att testa – du behöver inte vänta på midnatt.
+
     Hur meddelandet skickas bestämmer du i sista rutan: mobilappen
     (`notify.mobile_app_...`), Telegram (`telegram_bot.send_message`) eller
     något annat. Texten finns färdig i `{{ trelleborg_title }}` och
@@ -65,6 +68,9 @@ blueprint:
       selector:
         action:
 
+variables:
+  trelleborg_sensor: !input pickup_sensor
+
 mode: single
 
 triggers:
@@ -78,12 +84,12 @@ conditions: []
 actions:
   - alias: "Läs av tömningen"
     variables:
-      trelleborg_date: "{{ state_attr(trigger.entity_id, 'date') }}"
+      trelleborg_date: "{{ state_attr(trelleborg_sensor, 'date') }}"
       trelleborg_waste_types: >-
-        {{ state_attr(trigger.entity_id, 'waste_types') | join(', ') }}
-      trelleborg_bins: "{{ state_attr(trigger.entity_id, 'bins') | join(', ') }}"
+        {{ state_attr(trelleborg_sensor, 'waste_types') | join(', ') }}
+      trelleborg_bins: "{{ state_attr(trelleborg_sensor, 'bins') | join(', ') }}"
       trelleborg_when: >-
-        {{ 'idag' if state_attr(trigger.entity_id, 'date') == now().date() | string
+        {{ 'idag' if state_attr(trelleborg_sensor, 'date') == now().date() | string
            else 'imorgon' }}
   - alias: "Rubrik och text"
     variables:
